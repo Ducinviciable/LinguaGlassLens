@@ -1,7 +1,7 @@
 'use server';
 
-import { translateText } from '@/ai/flows/automatically-detect-source-language';
-import type { TranslateTextOutput } from '@/ai/flows/automatically-detect-source-language';
+import { translateText } from '@/ai/flows/translate-text';
+import type { TranslateTextOutput } from '@/ai/flows/translate-text';
 import { extractTextFromImage } from '@/ai/flows/extract-text-from-image';
 
 type TranslationResult = TranslateTextOutput & { error?: string };

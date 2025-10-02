@@ -1,9 +1,9 @@
 'use server';
 
 /**
- * @fileOverview A translation AI agent that automatically detects the source language.
+ * @fileOverview Translates text into the user's chosen language.
  *
- * - translateText - A function that handles the translation process with automatic language detection.
+ * - translateText - A function that handles the translation process.
  * - TranslateTextInput - The input type for the translateText function.
  * - TranslateTextOutput - The return type for the translateText function.
  */
@@ -13,30 +13,27 @@ import {z} from 'genkit';
 
 const TranslateTextInputSchema = z.object({
   text: z.string().describe('The text to translate.'),
-  targetLanguage: z.string().describe('The target language for the translation.'),
+  targetLanguage: z.string().describe('The target language code (e.g., "en", "vi").'),
 });
 export type TranslateTextInput = z.infer<typeof TranslateTextInputSchema>;
 
 const TranslateTextOutputSchema = z.object({
   translatedText: z.string().describe('The translated text.'),
-  detectedSourceLanguage: z.string().describe('The automatically detected source language.'),
+  detectedSourceLanguage: z.string().optional().describe('The automatically detected source language.'),
 });
 export type TranslateTextOutput = z.infer<typeof TranslateTextOutputSchema>;
 
-export async function translateText(input: TranslateTextInput): Promise<TranslateTextOutput> {
+export async function translateText(
+  input: TranslateTextInput
+): Promise<TranslateTextOutput> {
   return translateTextFlow(input);
 }
 
-const translatePrompt = ai.definePrompt({
-  name: 'translatePrompt',
+const translateTextPrompt = ai.definePrompt({
+  name: 'translateTextPrompt',
   input: {schema: TranslateTextInputSchema},
   output: {schema: TranslateTextOutputSchema},
-  prompt: `You are a translation expert. You will automatically detect the source language of the input text and translate it into the target language.
-
-Source Text: {{{text}}}
-Target Language: {{{targetLanguage}}}
-
-Translation:`,
+  prompt: `You are a translation expert. Automatically detect the source language and translate the following text into {{{targetLanguage}}}:\n\n{{{text}}}`,
 });
 
 const translateTextFlow = ai.defineFlow(
@@ -46,10 +43,7 @@ const translateTextFlow = ai.defineFlow(
     outputSchema: TranslateTextOutputSchema,
   },
   async input => {
-    const {output} = await translatePrompt(input);
-    return {
-      translatedText: output!.translatedText,
-      detectedSourceLanguage: 'auto',
-    };
+    const {output} = await translateTextPrompt(input);
+    return output!;
   }
 );
