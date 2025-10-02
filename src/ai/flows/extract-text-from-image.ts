@@ -36,7 +36,6 @@ export async function extractTextFromImage(
 const ocrPrompt = ai.definePrompt({
     name: 'ocrPrompt',
     input: { schema: ExtractTextFromImageInputSchema },
-    output: { schema: ExtractTextFromImageOutputSchema },
     prompt: `You are an Optical Character Recognition (OCR) expert. Extract all text from the provided image. If there is no text in the image, you must return an empty string for the extractedText field.
 
 Image: {{media url=imageDataUri}}`
