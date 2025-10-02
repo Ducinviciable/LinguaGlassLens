@@ -34,24 +34,25 @@ export async function extractTextFromImage(
   return extractTextFromImageFlow(input);
 }
 
-const extractTextPrompt = ai.definePrompt({
-  name: 'extractTextPrompt',
-  input: {schema: ExtractTextFromImageInputSchema},
-  output: {schema: ExtractTextFromImageOutputSchema},
-  prompt: `You are an Optical Character Recognition (OCR) expert. Extract all text from the provided image. If there is no text in the image, you must return an empty string for the extractedText field.
-
-Image: {{media url=imageDataUri}}`,
-  model: googleAI.model('gemini-1.5-flash-preview-0514'),
-});
-
 const extractTextFromImageFlow = ai.defineFlow(
   {
     name: 'extractTextFromImageFlow',
     inputSchema: ExtractTextFromImageInputSchema,
     outputSchema: ExtractTextFromImageOutputSchema,
   },
-  async input => {
-    const {output} = await extractTextPrompt(input);
+  async ({ imageDataUri }) => {
+    const model = googleAI.model('gemini-1.5-flash-preview-0514');
+    
+    const { output } = await ai.generate({
+        model: model,
+        prompt: {
+            text: 'You are an Optical Character Recognition (OCR) expert. Extract all text from the provided image. If there is no text in the image, you must return an empty string for the extractedText field.',
+            media: [{ url: imageDataUri }],
+        },
+        output: {
+            schema: ExtractTextFromImageOutputSchema,
+        }
+    });
     return output!;
   }
 );
