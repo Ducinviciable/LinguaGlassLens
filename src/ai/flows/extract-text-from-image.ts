@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {generate} from 'genkit';
 
 const ExtractTextFromImageInputSchema = z.object({
   imageDataUri: z
@@ -33,22 +34,23 @@ export async function extractTextFromImage(
   return extractTextFromImageFlow(input);
 }
 
-const ocrPrompt = ai.definePrompt({
-    name: 'ocrPrompt',
-    input: { schema: ExtractTextFromImageInputSchema },
-    prompt: `You are an Optical Character Recognition (OCR) expert. Extract all text from the provided image. If there is no text in the image, you must return an empty string for the extractedText field.
-
-Image: {{media url=imageDataUri}}`
-});
-
 const extractTextFromImageFlow = ai.defineFlow(
   {
     name: 'extractTextFromImageFlow',
     inputSchema: ExtractTextFromImageInputSchema,
     outputSchema: ExtractTextFromImageOutputSchema,
   },
-  async ( input ) => {
-    const { output } = await ocrPrompt(input);
-    return output!;
+  async ({imageDataUri}) => {
+    const response = await generate({
+      model: 'googleai/gemini-pro-vision',
+      prompt: [
+        {text: 'You are an Optical Character Recognition (OCR) expert. Extract all text from the provided image. If there is no text in the image, you must return an empty response.'},
+        {media: {url: imageDataUri}}
+      ],
+    });
+
+    const extractedText = response.text;
+    
+    return { extractedText };
   }
 );
