@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Languages, Loader2, MonitorPlay, Sparkles, Square, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,11 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { languages } from "@/lib/languages";
-import { getTranslation } from "@/app/actions";
+import { getTranslation, performOcr } from "@/app/actions";
 import { SettingsPanel, type DisplaySettings } from "./SettingsPanel";
-import { Skeleton } from "./ui/skeleton";
-
-const MOCK_OCR_TEXT = "The quick brown fox jumps over the lazy dog. This is a sample text for optical character recognition. LinguaLens will translate this content in real-time. In a real application, this text would be extracted from the screen capture. For now, we simulate this process to demonstrate the translation and display capabilities of the application. This allows developers to focus on the user experience and integration of the AI translation services without a full OCR pipeline.";
 
 type TranslationResult = {
   translatedText: string;
@@ -26,6 +23,7 @@ export function LinguaLensApp() {
   const [translationResult, setTranslationResult] = useState<TranslationResult | null>(null);
   const [targetLanguage, setTargetLanguage] = useState("vi");
   const [isLoading, setIsLoading] = useState(false);
+  const [isOcrRunning, setIsOcrRunning] = useState(false);
   const [settings, setSettings] = useState<DisplaySettings>({
     fontSize: 24,
     opacity: 80,
@@ -57,6 +55,39 @@ export function LinguaLensApp() {
     });
   };
 
+  const captureFrameAndProcess = useCallback(async () => {
+    if (!videoRef.current || !canvasRef.current || isOcrRunning) return;
+
+    setIsOcrRunning(true);
+    try {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageDataUri = canvas.toDataURL('image/jpeg');
+        
+        const ocrResult = await performOcr(imageDataUri);
+
+        if (ocrResult.error) {
+          toast({
+            variant: "destructive",
+            title: "OCR Error",
+            description: ocrResult.error,
+          });
+        } else if (ocrResult.extractedText && ocrResult.extractedText.trim() !== sourceText.trim()) {
+          setSourceText(ocrResult.extractedText);
+        }
+      }
+    } catch (err) {
+      console.error("Error during OCR processing:", err);
+    } finally {
+      setIsOcrRunning(false);
+    }
+  }, [isOcrRunning, sourceText, toast]);
+
   const startCapture = async () => {
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -69,15 +100,9 @@ export function LinguaLensApp() {
       }
       setIsCapturing(true);
 
-      // Stop capture when user closes the stream via browser UI
       stream.getVideoTracks()[0].onended = () => stopCapture();
 
-      intervalRef.current = setInterval(async () => {
-        // Mock OCR
-        const sentences = MOCK_OCR_TEXT.split('. ').filter(s => s);
-        const randomSentence = sentences[Math.floor(Math.random() * sentences.length)];
-        setSourceText(randomSentence);
-      }, 5000);
+      intervalRef.current = setInterval(captureFrameAndProcess, 5000);
 
     } catch (err) {
       console.error("Error starting capture: ", err);
@@ -101,16 +126,12 @@ export function LinguaLensApp() {
     setIsCapturing(false);
     setSourceText("");
     setTranslationResult(null);
+    setIsOcrRunning(false);
   };
   
-  useEffect(() => {
-    if (sourceText && isCapturing) {
-      handleTranslation();
-    }
-  }, [sourceText, isCapturing]);
+  const handleTranslation = useCallback(async () => {
+    if (!sourceText || !isCapturing) return;
 
-  const handleTranslation = async () => {
-    if (!sourceText) return;
     setIsLoading(true);
     const result = await getTranslation(sourceText, targetLanguage);
     if (result.error) {
@@ -125,7 +146,11 @@ export function LinguaLensApp() {
       localStorage.setItem("linguaLensTranslation", JSON.stringify({text: result.translatedText, key: Date.now()}));
     }
     setIsLoading(false);
-  };
+  }, [sourceText, isCapturing, targetLanguage, toast]);
+
+  useEffect(() => {
+    handleTranslation();
+  }, [sourceText, handleTranslation]);
 
   const openDisplayWindow = () => {
     window.open("/display", "LinguaLensDisplay", "width=800,height=400,resizable=yes");
@@ -208,12 +233,19 @@ export function LinguaLensApp() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Textarea
-                  value={sourceText}
-                  readOnly
-                  placeholder="Text from screen will appear here..."
-                  className="h-36 resize-none"
-                />
+                <div className="h-36 relative">
+                  <Textarea
+                    value={sourceText}
+                    readOnly
+                    placeholder="Text from screen will appear here..."
+                    className="h-36 resize-none"
+                  />
+                  {isOcrRunning && (
+                    <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
             <Card>
