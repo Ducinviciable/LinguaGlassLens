@@ -41,14 +41,14 @@ const extractTextFromImageFlow = ai.defineFlow(
     outputSchema: ExtractTextFromImageOutputSchema,
   },
   async ({ imageDataUri }) => {
-    const model = googleAI.model('gemini-1.5-flash-preview-0514');
+    const model = googleAI.model('gemini-1.5-flash-latest');
     
     const { output } = await ai.generate({
         model: model,
-        prompt: {
-            text: 'You are an Optical Character Recognition (OCR) expert. Extract all text from the provided image. If there is no text in the image, you must return an empty string for the extractedText field.',
-            media: [{ url: imageDataUri }],
-        },
+        prompt: [
+            { text: 'You are an Optical Character Recognition (OCR) expert. Extract all text from the provided image. If there is no text in the image, you must return an empty string for the extractedText field.'},
+            { media: { url: imageDataUri }},
+        ],
         output: {
             schema: ExtractTextFromImageOutputSchema,
         }
