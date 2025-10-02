@@ -17,12 +17,13 @@ export async function getTranslation(
   try {
     const result = await translateText({ text, targetLanguage });
     return result;
-  } catch (error) {
-    console.error('Translation failed:', error);
+  } catch (e: any) {
+    console.error('Translation failed:', e);
+    const errorMessage = e.message || 'Translation failed. Please try again later.';
     return {
       translatedText: '',
       detectedSourceLanguage: '',
-      error: 'Translation failed. Please try again later.',
+      error: errorMessage,
     };
   }
 }
@@ -34,11 +35,12 @@ export async function performOcr(imageDataUri: string): Promise<OcrResult> {
   try {
     const result = await extractTextFromImage({ imageDataUri });
     return result;
-  } catch (error) {
-    console.error('OCR failed:', error);
+  } catch (e: any) {
+    console.error('OCR failed:', e);
+    const errorMessage = e.message || 'Failed to extract text from the image.';
     return {
       extractedText: '',
-      error: 'Failed to extract text from the image.',
+      error: errorMessage,
     };
   }
 }
