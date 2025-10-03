@@ -23,6 +23,8 @@ export function TranslationDisplay() {
                 const storedSettings = localStorage.getItem('linguaLensSettings');
                 if (storedSettings) {
                     setSettings(JSON.parse(storedSettings));
+                } else {
+                    setSettings(defaultSettings);
                 }
 
                 const storedTranslation = localStorage.getItem('linguaLensTranslation');
@@ -36,6 +38,7 @@ export function TranslationDisplay() {
                 }
             } catch (error) {
                 console.error("Failed to update from localStorage", error);
+                setSettings(defaultSettings);
             }
         };
 

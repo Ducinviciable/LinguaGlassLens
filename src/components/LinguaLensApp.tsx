@@ -16,6 +16,13 @@ type TranslationResult = {
   detectedSourceLanguage: string;
 };
 
+const initialSettings: DisplaySettings = {
+  fontSize: 24,
+  opacity: 80,
+  backgroundColor: '26, 0, 51',
+  textColor: '240, 240, 240',
+};
+
 export function LinguaLensApp() {
   const { toast } = useToast();
   const [isCapturing, setIsCapturing] = useState(false);
@@ -24,12 +31,7 @@ export function LinguaLensApp() {
   const [targetLanguage, setTargetLanguage] = useState("vi");
   const [isLoading, setIsLoading] = useState(false);
   const [isOcrRunning, setIsOcrRunning] = useState(false);
-  const [settings, setSettings] = useState<DisplaySettings>({
-    fontSize: 24,
-    opacity: 80,
-    backgroundColor: '26, 0, 51',
-    textColor: '240, 240, 240',
-  });
+  const [settings, setSettings] = useState<DisplaySettings>(initialSettings);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -44,6 +46,8 @@ export function LinguaLensApp() {
       }
     } catch (error) {
       console.error("Failed to parse settings from localStorage", error);
+      // Fallback to initial settings if parsing fails
+      setSettings(initialSettings);
     }
   }, []);
 
