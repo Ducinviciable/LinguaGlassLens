@@ -8,9 +8,8 @@
  * - ExtractTextFromImageOutput - The return type for the extractTextFromImage function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-import {generate} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const ExtractTextFromImageInputSchema = z.object({
   imageDataUri: z
@@ -40,17 +39,17 @@ const extractTextFromImageFlow = ai.defineFlow(
     inputSchema: ExtractTextFromImageInputSchema,
     outputSchema: ExtractTextFromImageOutputSchema,
   },
-  async ({imageDataUri}) => {
-    const response = await generate({
-      model: 'googleai/gemini-pro-vision',
+  async ({ imageDataUri }) => {
+    const response = await ai.generate({
+      model: 'googleai/gemini-live-2.5-flash-preview-native-audio-09-2025',
       prompt: [
-        {text: 'You are an Optical Character Recognition (OCR) expert. Extract all text from the provided image. If there is no text in the image, you must return an empty response.'},
-        {media: {url: imageDataUri}}
+        { text: 'You are an Optical Character Recognition (OCR) expert. Extract all text from the provided image. If there is no text in the image, you must return an empty response.' },
+        { media: { url: imageDataUri } }
       ],
     });
 
     const extractedText = response.text;
-    
+
     return { extractedText };
   }
 );
