@@ -41,7 +41,7 @@ const extractTextFromImageFlow = ai.defineFlow(
   },
   async ({ imageDataUri }) => {
     const response = await ai.generate({
-      model: 'googleai/gemini-live-2.5-flash-preview-native-audio-09-2025',
+      model: 'googleai/gemini-1.5-flash',
       prompt: [
         { text: 'You are an Optical Character Recognition (OCR) expert. Extract all text from the provided image. If there is no text in the image, you must return an empty response.' },
         { media: { url: imageDataUri } }
